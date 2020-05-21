@@ -1,17 +1,93 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 
 #include "pch.h"
+#include "INIReader.h" // https://github.com/jtilly/inih
+#include <fstream>
 #include <tchar.h>
+#include <list>
+#include <vector>
 
 static HINSTANCE hL;
 static HMODULE gameModule;
+
+static std::wstring pluginsPath;
+static std::wstring iniPath;
+
+static std::vector<HMODULE> loadedModules;
+
+std::wstring GetLastErrorAsString()
+{
+	//Get the error message, if any.
+	DWORD errorMessageID = ::GetLastError();
+	if (errorMessageID == 0)
+		return std::wstring(); //No error message has been recorded
+
+	LPWSTR messageBuffer = nullptr;
+	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&messageBuffer, 0, NULL);
+
+	std::wstring message(messageBuffer, size);
+
+	//Free the buffer.
+	LocalFree(messageBuffer);
+
+	return message;
+}
+
+void LoadPlugins() {
+	std::list<std::wstring> pluginsToLoad = {};
+
+	std::fstream file;
+	file.open(iniPath.c_str(), std::ios::out | std::ios::in | std::ios::app);
+	if (!file) {
+		file.open(iniPath.c_str(), std::ios::in || std::ios::out || std::ios::trunc);
+		file << "[PluginLoader]\n";
+		file.flush();
+		file.close();
+	}
+
+	INIReader reader(iniPath.c_str());
+	if (reader.ParseError() != 0) {
+		std::cout << "Unable to load 'pluginLoader.ini'" << std::endl;
+	}
+
+	WIN32_FIND_DATA fd; // This'll store our data about the plugin we're currently loading in.
+	const HANDLE dllFile = FindFirstFile((pluginsPath + L"*.dll").c_str(), &fd); // Get the first DLL file in our plugins dir
+	int dllCount = 0;
+
+	if (dllFile == INVALID_HANDLE_VALUE) {
+		std::cout << "No Plugins Found..." << std::endl;
+		return; // Just return now, no need to bother to execute the rest of the code
+	}
+
+	do {
+		if ((!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))) {
+			std::wstring pluginName = (std::wstring)fd.cFileName;
+			std::wstring filePath = pluginsPath + (pluginName); // Generate our file path + the name of our plugin to load
+			HMODULE hMod = LoadLibrary(filePath.c_str());
+			if (hMod) {
+				loadedModules.push_back(hMod);
+				dllCount++;
+			}
+			else 
+				std::wcout << "Unable to load plugin: " << filePath << ": " << GetLastErrorAsString() << std::endl;
+		}
+
+	} while (FindNextFile(dllFile, &fd));
+
+	FindClose(dllFile);
+}
+
 int executionThread() {
 	AllocConsole(); // Allocate our console
 
 	std::string cmdArgs = GetCommandLineA(); // Get the command line args for our running process
 
 	// This'll hide the console if we're not running debug args
-	if (cmdArgs.find("--debug") == std::string::npos) ShowWindow(GetConsoleWindow(), SW_HIDE);
+	if (cmdArgs.find("--debug") == std::string::npos) 
+		ShowWindow(GetConsoleWindow(), SW_HIDE);
+
+	SetConsoleTitle(L"Borderlands 3 Plugin Loader");
 
 	freopen("CONIN$", "r", stdin);
 	freopen("CONOUT$", "w", stderr);
@@ -40,39 +116,22 @@ int executionThread() {
 		std::cout << "Unable to create plugins folder..." << std::endl;
 		return FALSE;
 	}
+	pluginsPath = pPath;
+	iniPath = pluginsPath + L"pluginLoader.ini";
 
-	WIN32_FIND_DATA fd; // This'll store our data about the plugin we're currently loading in.
-	const HANDLE dllFile = FindFirstFile((pPath + L"*.dll").c_str(), &fd); // Get the first DLL file in our plugins dir
-	int dllCount = 0;
-	if (dllFile == INVALID_HANDLE_VALUE) {
-		std::cout << "No Plugins Found..." << std::endl;
-		return TRUE; // Just return now, no need to bother to execute the rest of the code
+	LoadPlugins();
+
+	while (TRUE) {
+		char str[512];
+		std::cin.getline(str, 512, '\n');
+		if (!LoadLibraryA(str))
+			std::wcout << "Unable to load plugin: " << str << std::endl;
 	}
-
-	do {
-		if ((!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))) {
-			std::wstring filePath = pPath + ((std::wstring)fd.cFileName); // Generate our file path + the name of our plugin to load
-			if (LoadLibrary(filePath.c_str())) {
-				std::wcout << "Plugin loaded: " << filePath << std::endl;
-				dllCount++;
-			}
-			else {
-				std::wcout << "Unable to load plugin: " << filePath << std::endl;
-				wchar_t buf[256];
-				FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf, (sizeof(buf) / sizeof(wchar_t)), NULL);
-				MessageBox(nullptr, buf, L"PLUGIN LOAD ERROR", MB_OK);
-			}
-		}
-	} while (FindNextFile(dllFile, &fd));
-	FindClose(dllFile);
-	std::cout << "Loaded " << dllCount << " plugins(s)" << std::endl;
 
 	return TRUE;
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID) {
-
-
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
@@ -89,6 +148,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID) {
 		break;
 	case DLL_PROCESS_DETACH:
 		FreeLibrary(hL); // Free our proxied d3d11 lib so that way we can die in peace
+
+		// Now free all of our other libs that we loaded
+		for (auto&& hMod : loadedModules) {
+			FreeLibrary(hMod);
+		}
+
 		break;
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:

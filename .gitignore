@@ -351,3 +351,5 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+BL3DX11Injection/d3d11.exp
+BL3DX11Injection/d3d11.lib
