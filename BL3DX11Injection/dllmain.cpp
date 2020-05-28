@@ -2,164 +2,164 @@
 
 #include "pch.h"
 #include "INIReader.h" // https://github.com/jtilly/inih
+#include <set>
 #include <fstream>
 #include <tchar.h>
 #include <list>
 #include <vector>
+#include "dllmain.h"
 
 static HINSTANCE hL;
 static HMODULE gameModule;
-
 static std::wstring pluginsPath;
 static std::wstring iniPath;
-
 static std::vector<HMODULE> loadedModules;
 
-std::wstring GetLastErrorAsString()
-{
-	//Get the error message, if any.
-	DWORD errorMessageID = ::GetLastError();
-	if (errorMessageID == 0)
-		return std::wstring(); //No error message has been recorded
+#pragma pack(1)
+FARPROC p[51] = { 0 };
 
-	LPWSTR messageBuffer = nullptr;
-	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&messageBuffer, 0, NULL);
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
+    if(reason == DLL_PROCESS_ATTACH) {
 
-	std::wstring message(messageBuffer, size);
-
-	//Free the buffer.
-	LocalFree(messageBuffer);
-
-	return message;
-}
-
-void LoadPlugins() {
-	std::list<std::wstring> pluginsToLoad = {};
-
-	std::fstream file;
-	file.open(iniPath.c_str(), std::ios::out | std::ios::in | std::ios::app);
-	if (!file) {
-		file.open(iniPath.c_str(), std::ios::in || std::ios::out || std::ios::trunc);
-		file << "[PluginLoader]\n";
-		file.flush();
-		file.close();
-	}
-
-	INIReader reader(iniPath.c_str());
-	if (reader.ParseError() != 0) {
-		std::cout << "Unable to load 'pluginLoader.ini'" << std::endl;
-	}
-
-	WIN32_FIND_DATA fd; // This'll store our data about the plugin we're currently loading in.
-	const HANDLE dllFile = FindFirstFile((pluginsPath + L"*.dll").c_str(), &fd); // Get the first DLL file in our plugins dir
-	int dllCount = 0;
-
-	if (dllFile == INVALID_HANDLE_VALUE) {
-		std::cout << "No Plugins Found..." << std::endl;
-		return; // Just return now, no need to bother to execute the rest of the code
-	}
-
-	do {
-		if ((!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))) {
-			std::wstring pluginName = (std::wstring)fd.cFileName;
-			std::wstring filePath = pluginsPath + (pluginName); // Generate our file path + the name of our plugin to load
-			HMODULE hMod = LoadLibrary(filePath.c_str());
-			if (hMod) {
-				loadedModules.push_back(hMod);
-				dllCount++;
-			}
-			else 
-				std::wcout << "Unable to load plugin: " << filePath << ": " << GetLastErrorAsString() << std::endl;
-		}
-
-	} while (FindNextFile(dllFile, &fd));
-
-	FindClose(dllFile);
-}
-
-int executionThread() {
-	AllocConsole(); // Allocate our console
-
-	std::string cmdArgs = GetCommandLineA(); // Get the command line args for our running process
-
-	// This'll hide the console if we're not running debug args
-	if (cmdArgs.find("--debug") == std::string::npos) 
-		ShowWindow(GetConsoleWindow(), SW_HIDE);
-
-	SetConsoleTitle(L"Borderlands 3 Plugin Loader");
-
-	freopen("CONIN$", "r", stdin);
-	freopen("CONOUT$", "w", stderr);
-	freopen("CONOUT$", "w", stdout);
-
-	HANDLE hStdout = CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	HANDLE hStdin = CreateFile(L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	SetStdHandle(STD_OUTPUT_HANDLE, hStdout); // Set our STD handles
-	SetStdHandle(STD_ERROR_HANDLE, hStdout); // stderr is going back to STDOUT
-	SetStdHandle(STD_INPUT_HANDLE, hStdin);
-
-	std::cout << "Console allocated...\n";
-	std::cout << "==== Debug ====\n";
-	WCHAR pluginsFilePath[513] = { 0 };
-	GetModuleFileNameW(gameModule, pluginsFilePath, 512);
-
-	std::wstring pPath = pluginsFilePath;
-	pPath = pPath.substr(0, pPath.rfind('\\')) + L"\\Plugins\\";
-	std::wcout << "Plugins Path: " << pPath << std::endl;
-
-	// This'll hapen if we are magically unable to create the plugins dir.
-	if (!CreateDirectory(pPath.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS) {
-		std::cout << "Unable to create plugins folder..." << std::endl;
-		return FALSE;
-	}
-	pluginsPath = pPath;
-	iniPath = pluginsPath + L"pluginLoader.ini";
-
-	LoadPlugins();
-
-	while (TRUE) {
-		char str[512];
-		std::cin.getline(str, 512, '\n');
-		if (!LoadLibraryA(str))
-			std::wcout << "Unable to load plugin: " << str << std::endl;
-	}
-
-	return TRUE;
-}
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID) {
-	switch (ul_reason_for_call)
-	{
-	case DLL_PROCESS_ATTACH:
-		hL = LoadLibrary(_T(".\\d3d11_org.dll")); // Load our original d3d11 dll.
+		hL = LoadLibrary(L".\\d3d11_org.dll"); // Load our original d3d11 dll.
 		if (!hL) { // This'll run if we're missing the original d3d11 dll or if its improper somehow.
 			MessageBoxW(NULL, L"Please add the original d3d11 dll (`d3d11_org.dll`).", L"Plugin Loader", MB_OK | MB_ICONERROR);
 			ExitProcess(1); // Close the current process since the game will just crash (later) if we return false
 			return false;
 		}
+
 		gameModule = hModule;
 		DisableThreadLibraryCalls(hModule);
 
-		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)executionThread, NULL, NULL, NULL);
-		break;
-	case DLL_PROCESS_DETACH:
+        CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)executionThread, NULL, NULL, NULL);
+    }
+	if(reason == DLL_PROCESS_DETACH) {
 		FreeLibrary(hL); // Free our proxied d3d11 lib so that way we can die in peace
 
 		// Now free all of our other libs that we loaded
 		for (auto&& hMod : loadedModules) {
 			FreeLibrary(hMod);
 		}
-
-		break;
-	case DLL_THREAD_ATTACH:
-	case DLL_THREAD_DETACH:
-		break;
-	}
+    }
 	return TRUE;
+}
+
+void LoadPlugins() {
+    std::list<std::wstring> pluginsToLoad = {};
+
+    std::fstream file;
+    file.open(iniPath.c_str(), std::ios::out | std::ios::in | std::ios::app);
+    if (!file) {
+        file.open(iniPath.c_str(), std::ios::in || std::ios::out || std::ios::trunc);
+        file << "[PluginLoader]\n";
+        file.flush();
+        file.close();
+    }
+
+    INIReader reader(iniPath.c_str());
+    if (reader.ParseError() != 0) {
+        std::cout << "Unable to load 'pluginLoader.ini'" << std::endl;
+    }
+
+    WIN32_FIND_DATA fd; // This'll store our data about the plugin we're currently loading in.
+    const HANDLE dllFile = FindFirstFile((pluginsPath + L"*.dll").c_str(), &fd); // Get the first DLL file in our plugins dir
+    int dllCount = 0;
+
+    if (dllFile == INVALID_HANDLE_VALUE) {
+        std::cout << "No Plugins Found..." << std::endl;
+        return; // Just return now, no need to bother to execute the rest of the code
+    }
+
+    do {
+        if ((!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))) {
+            std::wstring pluginName = (std::wstring)fd.cFileName;
+            std::string s(pluginName.begin(), pluginName.end());
+
+            if (reader.Sections().count(s)) {
+                float delayTime = reader.GetFloat(s, "delaySeconds", 0);
+                std::cout << "Waiting " << delayTime << " seconds to load " << s << std::endl;
+                Sleep(delayTime * 1000);
+            }
+
+
+            std::wstring filePath = pluginsPath + (pluginName); // Generate our file path + the name of our plugin to load
+            HMODULE hMod = LoadLibrary(filePath.c_str());
+            if (hMod) {
+                loadedModules.push_back(hMod);
+                dllCount++;
+            }
+            else
+                std::wcout << "Unable to load plugin: " << filePath << ": " << GetLastErrorAsString() << std::endl;
+        }
+
+    } while (FindNextFile(dllFile, &fd));
+
+    FindClose(dllFile);
+}
+
+int executionThread() {
+    AllocConsole(); // Allocate our console
+
+    std::string cmdArgs = GetCommandLineA(); // Get the command line args for our running process
+
+    // This'll hide the console if we're not running debug args
+    if (cmdArgs.find("--debug") == std::string::npos)
+        ShowWindow(GetConsoleWindow(), SW_HIDE);
+
+    SetConsoleTitle(L"Borderlands 3 Plugin Loader");
+
+    freopen("CONIN$", "r", stdin);
+    freopen("CONOUT$", "w", stderr);
+    freopen("CONOUT$", "w", stdout);
+
+    HANDLE hStdout = CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hStdin = CreateFile(L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    SetStdHandle(STD_OUTPUT_HANDLE, hStdout); // Set our STD handles
+    SetStdHandle(STD_ERROR_HANDLE, hStdout); // stderr is going back to STDOUT
+    SetStdHandle(STD_INPUT_HANDLE, hStdin);
+
+    std::cout << "Console allocated...\n";
+    std::cout << "==== Debug ====\n";
+    WCHAR pluginsFilePath[513] = { 0 };
+    GetModuleFileNameW(gameModule, pluginsFilePath, 512);
+
+    std::wstring pPath = pluginsFilePath;
+    pPath = pPath.substr(0, pPath.rfind('\\')) + L"\\Plugins\\";
+    std::wcout << "Plugins Path: " << pPath << std::endl;
+
+    // This'll hapen if we are magically unable to create the plugins dir.
+    if (!CreateDirectory(pPath.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS) {
+        std::cout << "Unable to create plugins folder..." << std::endl;
+        return FALSE;
+    }
+    pluginsPath = pPath;
+    iniPath = pluginsPath + L"pluginLoader.ini";
+
+    LoadPlugins();
+
+    return TRUE;
+}
+
+std::wstring GetLastErrorAsString()
+{
+    //Get the error message, if any.
+    DWORD errorMessageID = ::GetLastError();
+    if (errorMessageID == 0)
+        return std::wstring(); //No error message has been recorded
+
+    LPWSTR messageBuffer = nullptr;
+    size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&messageBuffer, 0, NULL);
+
+    std::wstring message(messageBuffer, size);
+
+    //Free the buffer.
+    LocalFree(messageBuffer);
+
+    return message;
 }
 
 #pragma region Linker Exports
@@ -267,4 +267,3 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID) {
 #pragma comment(linker, "/export:CreateDirect3D11SurfaceFromDXGISurface=d3d11_org.CreateDirect3D11SurfaceFromDXGISurface")
 
 #pragma endregion
-
