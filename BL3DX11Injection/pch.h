@@ -15,4 +15,7 @@
 #include <iostream>
 #include <stdio.h>
 
+std::wstring GetLastErrorAsString();
+std::wstring WidenString(const std::string& s);
+
 #endif //PCH_H

@@ -58,7 +58,7 @@ void LoadPlugins() {
 
     INIReader reader(iniPath.c_str());
     if (reader.ParseError() != 0) {
-        std::cout << "Unable to load 'pluginLoader.ini'" << std::endl;
+        std::wcout << "Unable to load 'pluginLoader.ini'" << std::endl;
     }
 
     WIN32_FIND_DATA fd; // This'll store our data about the plugin we're currently loading in.
@@ -66,7 +66,7 @@ void LoadPlugins() {
     int dllCount = 0;
 
     if (dllFile == INVALID_HANDLE_VALUE) {
-        std::cout << "No Plugins Found..." << std::endl;
+        std::wcout << "No Plugins Found..." << std::endl;
         return; // Just return now, no need to bother to execute the rest of the code
     }
 
@@ -77,7 +77,7 @@ void LoadPlugins() {
 
             if (reader.Sections().count(s)) {
                 float delayTime = reader.GetFloat(s, "delaySeconds", 0);
-                std::cout << "Waiting " << delayTime << " seconds to load " << s << std::endl;
+                std::wcout << "Waiting " << delayTime << " seconds to load " << WidenString(s) << std::endl;
                 Sleep(delayTime * 1000);
             }
 
@@ -98,6 +98,7 @@ void LoadPlugins() {
 }
 
 int executionThread() {
+
     AllocConsole(); // Allocate our console
 
     std::string cmdArgs = GetCommandLineA(); // Get the command line args for our running process
@@ -121,8 +122,8 @@ int executionThread() {
     SetStdHandle(STD_ERROR_HANDLE, hStdout); // stderr is going back to STDOUT
     SetStdHandle(STD_INPUT_HANDLE, hStdin);
 
-    std::cout << "Console allocated...\n";
-    std::cout << "==== Debug ====\n";
+    std::wcout << "Console allocated...\n";
+    std::wcout << "==== Debug ====\n";
     WCHAR pluginsFilePath[513] = { 0 };
     GetModuleFileNameW(gameModule, pluginsFilePath, 512);
 
@@ -132,7 +133,7 @@ int executionThread() {
 
     // This'll hapen if we are magically unable to create the plugins dir.
     if (!CreateDirectory(pPath.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS) {
-        std::cout << "Unable to create plugins folder..." << std::endl;
+        std::wcout << "Unable to create plugins folder..." << std::endl;
         return FALSE;
     }
     pluginsPath = pPath;
@@ -141,25 +142,6 @@ int executionThread() {
     LoadPlugins();
 
     return TRUE;
-}
-
-std::wstring GetLastErrorAsString()
-{
-    //Get the error message, if any.
-    DWORD errorMessageID = ::GetLastError();
-    if (errorMessageID == 0)
-        return std::wstring(); //No error message has been recorded
-
-    LPWSTR messageBuffer = nullptr;
-    size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&messageBuffer, 0, NULL);
-
-    std::wstring message(messageBuffer, size);
-
-    //Free the buffer.
-    LocalFree(messageBuffer);
-
-    return message;
 }
 
 #pragma region Linker Exports
