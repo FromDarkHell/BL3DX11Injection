@@ -1,22 +1,19 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 
 #include "pch.h"
-#include "INIReader.h" // https://github.com/jtilly/inih
 #include <set>
 #include <fstream>
 #include <tchar.h>
 #include <list>
-#include <vector>
 #include "dllmain.h"
+#include "PluginLoadHook.h"
 
 static HINSTANCE hL;
 static HMODULE gameModule;
-static std::wstring pluginsPath;
-static std::wstring iniPath;
-static std::vector<HMODULE> loadedModules;
 
 #pragma pack(1)
 FARPROC p[51] = { 0 };
+
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
     if(reason == DLL_PROCESS_ATTACH) {
@@ -35,66 +32,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
     }
 	if(reason == DLL_PROCESS_DETACH) {
 		FreeLibrary(hL); // Free our proxied d3d11 lib so that way we can die in peace
-
-		// Now free all of our other libs that we loaded
-		for (auto&& hMod : loadedModules) {
-			FreeLibrary(hMod);
-		}
     }
 	return TRUE;
-}
-
-void LoadPlugins() {
-    std::list<std::wstring> pluginsToLoad = {};
-
-    std::fstream file;
-    file.open(iniPath.c_str(), std::ios::out | std::ios::in | std::ios::app);
-    if (!file) {
-        file.open(iniPath.c_str(), std::ios::in || std::ios::out || std::ios::trunc);
-        file << "[PluginLoader]\n";
-        file.flush();
-        file.close();
-    }
-
-    INIReader reader(iniPath.c_str());
-    if (reader.ParseError() != 0) {
-        std::wcout << "Unable to load 'pluginLoader.ini'" << std::endl;
-    }
-
-    WIN32_FIND_DATA fd; // This'll store our data about the plugin we're currently loading in.
-    const HANDLE dllFile = FindFirstFile((pluginsPath + L"*.dll").c_str(), &fd); // Get the first DLL file in our plugins dir
-    int dllCount = 0;
-
-    if (dllFile == INVALID_HANDLE_VALUE) {
-        std::wcout << "No Plugins Found..." << std::endl;
-        return; // Just return now, no need to bother to execute the rest of the code
-    }
-
-    do {
-        if ((!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))) {
-            std::wstring pluginName = (std::wstring)fd.cFileName;
-            std::string s(pluginName.begin(), pluginName.end());
-
-            if (reader.Sections().count(s)) {
-                float delayTime = reader.GetFloat(s, "delaySeconds", 0);
-                std::wcout << "Waiting " << delayTime << " seconds to load " << WidenString(s) << std::endl;
-                Sleep(delayTime * 1000);
-            }
-
-
-            std::wstring filePath = pluginsPath + (pluginName); // Generate our file path + the name of our plugin to load
-            HMODULE hMod = LoadLibrary(filePath.c_str());
-            if (hMod) {
-                loadedModules.push_back(hMod);
-                dllCount++;
-            }
-            else
-                std::wcout << "Unable to load plugin: " << filePath << ": " << GetLastErrorAsString() << std::endl;
-        }
-
-    } while (FindNextFile(dllFile, &fd));
-
-    FindClose(dllFile);
 }
 
 int executionThread() {
@@ -124,25 +63,12 @@ int executionThread() {
 
     std::wcout << "Console allocated...\n";
     std::wcout << "==== Debug ====\n";
-    WCHAR pluginsFilePath[513] = { 0 };
-    GetModuleFileNameW(gameModule, pluginsFilePath, 512);
 
-    std::wstring pPath = pluginsFilePath;
-    pPath = pPath.substr(0, pPath.rfind('\\')) + L"\\Plugins\\";
-    std::wcout << "Plugins Path: " << pPath << std::endl;
-
-    // This'll hapen if we are magically unable to create the plugins dir.
-    if (!CreateDirectory(pPath.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS) {
-        std::wcout << "Unable to create plugins folder..." << std::endl;
-        return FALSE;
-    }
-    pluginsPath = pPath;
-    iniPath = pluginsPath + L"pluginLoader.ini";
-
-    LoadPlugins();
+    InitializePluginHooks(gameModule);
 
     return TRUE;
 }
+
 
 #pragma region Linker Exports
 

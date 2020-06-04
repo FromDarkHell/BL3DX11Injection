@@ -162,8 +162,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="dllmain.h" />
+    <ClInclude Include="HookLib.h" />
     <ClInclude Include="INIReader.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="PluginLoadHook.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
@@ -173,6 +175,11 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="PluginLoadHook.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="HookLib.lib" />
+    <Library Include="Zydis.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
