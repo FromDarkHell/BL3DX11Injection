@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HelloWorldDLL", "HelloWorld
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IntroLogoRemover", "IntroLogoRemover\IntroLogoRemover.vcxproj", "{039DCBA4-9E28-4B5A-86DF-619DFFAC7321}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HotfixInjectionProxy", "HotfixInjectionProxy\HotfixInjectionProxy.vcxproj", "{B44A85D6-299D-4680-B3E4-B5AF9B74976F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{039DCBA4-9E28-4B5A-86DF-619DFFAC7321}.Release|x64.Build.0 = Release|x64
 		{039DCBA4-9E28-4B5A-86DF-619DFFAC7321}.Release|x86.ActiveCfg = Release|Win32
 		{039DCBA4-9E28-4B5A-86DF-619DFFAC7321}.Release|x86.Build.0 = Release|Win32
+		{B44A85D6-299D-4680-B3E4-B5AF9B74976F}.Debug|x64.ActiveCfg = Debug|x64
+		{B44A85D6-299D-4680-B3E4-B5AF9B74976F}.Debug|x64.Build.0 = Debug|x64
+		{B44A85D6-299D-4680-B3E4-B5AF9B74976F}.Debug|x86.ActiveCfg = Debug|Win32
+		{B44A85D6-299D-4680-B3E4-B5AF9B74976F}.Debug|x86.Build.0 = Debug|Win32
+		{B44A85D6-299D-4680-B3E4-B5AF9B74976F}.Release|x64.ActiveCfg = Release|x64
+		{B44A85D6-299D-4680-B3E4-B5AF9B74976F}.Release|x64.Build.0 = Release|x64
+		{B44A85D6-299D-4680-B3E4-B5AF9B74976F}.Release|x86.ActiveCfg = Release|Win32
+		{B44A85D6-299D-4680-B3E4-B5AF9B74976F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

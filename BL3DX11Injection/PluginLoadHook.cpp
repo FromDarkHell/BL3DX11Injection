@@ -66,7 +66,7 @@ void LoadPlugins() {
         std::wcout << "No Plugins Found..." << std::endl;
         return; // Just return now, no need to bother to execute the rest of the code
     }
-
+    
     do {
         if ((!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))) {
             std::wstring pluginName = (std::wstring)fd.cFileName;
@@ -90,7 +90,7 @@ void LoadPlugins() {
         }
 
     } while (FindNextFile(dllFile, &fd));
-
+    
     FindClose(dllFile);
 }
 

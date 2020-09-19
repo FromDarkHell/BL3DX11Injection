@@ -28,6 +28,28 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
 		gameModule = hModule;
 		DisableThreadLibraryCalls(hModule);
 
+        AllocConsole(); // Allocate our console
+
+        freopen("CONIN$", "r", stdin);
+        freopen("CONOUT$", "w", stderr);
+        freopen("CONOUT$", "w", stdout);
+
+        HANDLE hStdout = CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+            NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        HANDLE hStdin = CreateFile(L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+            NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+        SetStdHandle(STD_OUTPUT_HANDLE, hStdout); // Set our STD handles
+        SetStdHandle(STD_ERROR_HANDLE, hStdout); // stderr is going back to STDOUT
+        SetStdHandle(STD_INPUT_HANDLE, hStdin);
+
+        if (!LoadLibrary(L"./Plugins/HotfixInjectionProxy.dll")) {
+            MessageBoxW(NULL, L"Unable to load injection proxy...", L"Plugin Loader", MB_OK | MB_ICONERROR);
+            ExitProcess(1);
+            return false;
+        }
+
+
         CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)executionThread, NULL, NULL, NULL);
     }
 	if(reason == DLL_PROCESS_DETACH) {
@@ -38,7 +60,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
 
 int executionThread() {
 
-    AllocConsole(); // Allocate our console
+    
 
     std::string cmdArgs = GetCommandLineA(); // Get the command line args for our running process
 
@@ -48,18 +70,7 @@ int executionThread() {
 
     SetConsoleTitle(L"Borderlands 3 Plugin Loader");
 
-    freopen("CONIN$", "r", stdin);
-    freopen("CONOUT$", "w", stderr);
-    freopen("CONOUT$", "w", stdout);
 
-    HANDLE hStdout = CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-        NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    HANDLE hStdin = CreateFile(L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-        NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-    SetStdHandle(STD_OUTPUT_HANDLE, hStdout); // Set our STD handles
-    SetStdHandle(STD_ERROR_HANDLE, hStdout); // stderr is going back to STDOUT
-    SetStdHandle(STD_INPUT_HANDLE, hStdin);
 
     std::wcout << "Console allocated...\n";
     std::wcout << "==== Debug ====\n";

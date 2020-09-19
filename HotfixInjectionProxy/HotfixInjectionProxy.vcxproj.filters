@@ -3,7 +3,7 @@
   <ItemGroup>
     <Filter Include="Source Files">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
@@ -13,45 +13,25 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Libraries">
-      <UniqueIdentifier>{9ba04bba-fc2c-4b2e-9fbf-24e8701d4027}</UniqueIdentifier>
+    <Filter Include="Header Files\include">
+      <UniqueIdentifier>{0034c3a7-8374-4f2b-8648-a3709b66f6d6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="INIReader.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\Util.h">
+      <Filter>Header Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="dllmain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HookLib.h">
-      <Filter>Header Files\Libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="PluginLoadHook.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\WinSockHandlers.h">
+      <Filter>Header Files\include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PluginLoadHook.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="HookLib.lib">
-      <Filter>Header Files\Libraries</Filter>
-    </Library>
-    <Library Include="Zydis.lib">
-      <Filter>Header Files\Libraries</Filter>
-    </Library>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
