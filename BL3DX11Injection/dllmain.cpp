@@ -37,20 +37,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
 }
 
 int executionThread() {
-
-    AllocConsole(); // Allocate our console
-
     std::string cmdArgs = GetCommandLineA(); // Get the command line args for our running process
 
-    // This'll hide the console if we're not running debug args
-    if (cmdArgs.find("--debug") == std::string::npos)
-        ShowWindow(GetConsoleWindow(), SW_HIDE);
+    // If we're running in debug mode, we wanna allocate the console
+
+    if (cmdArgs.find("--debug") != std::string::npos) {
+        AllocConsole(); // Allocate our console
+    }
 
     SetConsoleTitle(L"Borderlands 3 Plugin Loader");
-
-    freopen("CONIN$", "r", stdin);
-    freopen("CONOUT$", "w", stderr);
-    freopen("CONOUT$", "w", stdout);
 
     HANDLE hStdout = CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
         NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);

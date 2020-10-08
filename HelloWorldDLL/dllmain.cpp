@@ -3,6 +3,8 @@
 #include <iostream>
 
 int executionThread() {
+    AllocConsole();
+    
     std::cout << "HI ITS ME THE HELLO WORLD :)";
 
     return 1;

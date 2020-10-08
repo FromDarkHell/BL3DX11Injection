@@ -139,5 +139,4 @@ void InitializePluginHooks(HMODULE gameModule) {
         std::wcout << "Initialized LoadLibraryW(...) hook..." << std::endl;
     else  
         std::wcout << "Unable to initialize LoadLibraryW(...) hook" << std::endl;
-
 }
