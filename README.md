@@ -17,4 +17,5 @@ delaySeconds=1
 where `delaySeconds` is how many seconds you want to delay loading (A better solution would generally be hooking into stuff btw)  
 
 As Borderlands 3 is compiled for x64 all of your libraries need to be x64 (or x64 compatible)   
-If you want a default way to setup your solution, take a look at `HelloWorldDLL` or `IntroLogoRemover` in the [Source](https://github.com/FromDarkHell/BL3DX11Injection/tree/master/IntroLogoRemover) 
+If you want a default way to setup your solution, take a look at `HelloWorldDLL` or `IntroLogoRemover` in the [Source](https://github.com/FromDarkHell/BL3DX11Injection/tree/master/IntroLogoRemover)  
+If you wanna see a debug console without having to call `AllocConsole()` yourself and do some checking, launch the game with the argument `--debug`
