@@ -7,13 +7,10 @@
 #include <list>
 #include "dllmain.h"
 #include "PluginLoadHook.h"
+#include <thread>
 
 static HINSTANCE hL;
 static HMODULE gameModule;
-
-#pragma pack(1)
-FARPROC p[51] = { 0 };
-
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
     if(reason == DLL_PROCESS_ATTACH) {
@@ -40,12 +37,16 @@ int executionThread() {
     std::string cmdArgs = GetCommandLineA(); // Get the command line args for our running process
 
     // If we're running in debug mode, we wanna allocate the console
-
     if (cmdArgs.find("--debug") != std::string::npos) {
         AllocConsole(); // Allocate our console
     }
 
     SetConsoleTitle(L"Borderlands 3 Plugin Loader");
+
+    FILE* f = nullptr;
+    freopen_s(&f, "CONIN$", "r", stdin);
+    freopen_s(&f, "CONOUT$", "w", stderr);
+    freopen_s(&f, "CONOUT$", "w", stdout);
 
     HANDLE hStdout = CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
         NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);

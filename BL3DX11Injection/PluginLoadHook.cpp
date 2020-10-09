@@ -1,16 +1,5 @@
-#include <set>
-#include <fstream>
-#include <tchar.h>
-#include <list>
-#include <vector>
-
 #include "pch.h"
-#include "INIReader.h" // https://github.com/jtilly/inih
-
-#include "HookLib.h"
 #include "PluginLoadHook.h"
-#pragma comment(lib, "Zydis.lib")
-#pragma comment(lib, "HookLib.lib")
 
 std::wstring pluginsPath;
 static std::wstring iniPath;
@@ -39,6 +28,16 @@ VOID WINAPI ExitProcessHook(ULONG ExitCode)
 #pragma endregion
 
 #pragma region Plugin Loading
+
+void PluginLoadFunction(std::wstring dll, long delay) {
+   std::this_thread::sleep_for(std::chrono::seconds(delay));
+   HMODULE hMod = LoadLibrary(dll.c_str());
+   if (hMod) 
+       loadedModules.push_back(hMod);
+   else 
+       std::wcout << "Unable to load plugin: " << dll << ": " << GetLastErrorAsString() << std::endl;
+}
+
 void LoadPlugins() {
     std::wcout << "Loading Plugins..." << std::endl;
 
@@ -67,31 +66,37 @@ void LoadPlugins() {
         return; // Just return now, no need to bother to execute the rest of the code
     }
 
+    std::vector<std::thread> threads;
+
     do {
         if ((!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))) {
             std::wstring pluginName = (std::wstring)fd.cFileName;
             std::string s(pluginName.begin(), pluginName.end());
 
+            std::wstring filePath = pluginsPath + (pluginName); // Generate our file path + the name of our plugin to load
+
             if (reader.Sections().count(s)) {
                 float delayTime = reader.GetFloat(s, "delaySeconds", 0);
-                std::wcout << "Waiting " << delayTime << " seconds to load " << WidenString(s) << std::endl;
-                Sleep(delayTime * 1000);
+                std::wcout << "Waiting " << delayTime << " seconds to load " << pluginName << "\n";
+                threads.push_back(std::thread(PluginLoadFunction, filePath, (long)delayTime));
             }
-
-
-            std::wstring filePath = pluginsPath + (pluginName); // Generate our file path + the name of our plugin to load
-            HMODULE hMod = LoadLibrary(filePath.c_str());
-            if (hMod) {
-                loadedModules.push_back(hMod);
-                dllCount++;
+            else {
+                HMODULE hMod = LoadLibrary(filePath.c_str());
+                if (hMod) loadedModules.push_back(hMod);
+                else std::wcout << "Unable to load plugin: " << filePath << ": " << GetLastErrorAsString() << std::endl;
             }
-            else
-                std::wcout << "Unable to load plugin: " << filePath << ": " << GetLastErrorAsString() << std::endl;
         }
 
     } while (FindNextFile(dllFile, &fd));
-
     FindClose(dllFile);
+
+    for (auto& t : threads) {
+        if (t.joinable()) 
+            t.join();
+    }
+
+    // Add an extra new line just in case it all gets messed up with the whole multithreading
+    std::wcout << std::endl;
 }
 
 using _LoadLibrary = HMODULE(WINAPI*)(LPCWSTR lpLibFileName);
