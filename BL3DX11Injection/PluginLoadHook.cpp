@@ -30,7 +30,7 @@ VOID WINAPI ExitProcessHook(ULONG ExitCode)
 #pragma region Plugin Loading
 
 void PluginLoadFunction(std::wstring dll, long delay) {
-   std::this_thread::sleep_for(std::chrono::seconds(delay));
+   std::this_thread::sleep_for(std::chrono::milliseconds(delay));
    HMODULE hMod = LoadLibrary(dll.c_str());
    if (hMod) 
        loadedModules.push_back(hMod);
@@ -78,7 +78,7 @@ void LoadPlugins() {
             if (reader.Sections().count(s)) {
                 float delayTime = reader.GetFloat(s, "delaySeconds", 0);
                 std::wcout << "Waiting " << delayTime << " seconds to load " << pluginName << "\n";
-                threads.push_back(std::thread(PluginLoadFunction, filePath, (long)delayTime));
+                threads.push_back(std::thread(PluginLoadFunction, filePath, (long) (delayTime * 1000)));
             }
             else {
                 HMODULE hMod = LoadLibrary(filePath.c_str());
