@@ -104,7 +104,7 @@ _LoadLibrary OriginalLoadLibrary = NULL;
 HMODULE WINAPI LoadLibraryWHook(LPCWSTR lpLibFileName) {
     std::wcout << "Loading Library: " << std::wstring(lpLibFileName) << std::endl;
 
-    if (std::wstring(lpLibFileName)._Equal(L"shcore.dll")) {
+    if (std::wstring(lpLibFileName).find(L"APEX_Clothing_x64") != std::string::npos) {
         CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)LoadPlugins, NULL, NULL, NULL);
         RemoveHook(OriginalLoadLibrary);
         return LoadLibrary(lpLibFileName);
