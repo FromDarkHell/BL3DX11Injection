@@ -1,36 +1,36 @@
-// dllmain.cpp : Defines the entry point for the DLL application.
-
 #include "pch.h"
-#include <set>
-#include <fstream>
-#include <tchar.h>
-#include <list>
+
+#include <filesystem>
 #include "dllmain.h"
 #include "PluginLoadHook.h"
-#include <thread>
 
 static HINSTANCE hL;
 static HMODULE gameModule;
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
-    if(reason == DLL_PROCESS_ATTACH) {
+    if (reason == DLL_PROCESS_ATTACH) {
+        // Microsoft tells us not to do like any of these things because it can cause a deadlock but if I don't do it here
+        // It'll end up introducing a race condition so instead I'll just do it :)
+        // We copy the original DX11 dll from Sys32 in order to avoid weird version differences and crashes
+        // The linker exports at the bottom let windows handle all of the DX11 proxy stuff after a `d3d11_org` exists in the root dir
 
-		hL = LoadLibrary(L".\\d3d11_org.dll"); // Load our original d3d11 dll.
-		if (!hL) { // This'll run if we're missing the original d3d11 dll or if its improper somehow.
-			MessageBoxW(NULL, L"Please add the original d3d11 dll (`d3d11_org.dll`).", L"Plugin Loader", MB_OK | MB_ICONERROR);
-			ExitProcess(1); // Close the current process since the game will just crash (later) if we return false
-			return false;
-		}
+        // Check if the file exists to just avoid constantly copying the file on launch
+        std::wstring DX11OrgPath = GetModulePath() + L"\\d3d11_org.dll";
+        if (!std::filesystem::exists(DX11OrgPath)) {
+            // Get the path to `C:\Windows\System32\d3d11.dll` (or whatever it is for whoever's using this)
+            wchar_t DX11Path[MAX_PATH];
+            GetSystemDirectory(DX11Path, MAX_PATH);
+            wcscat_s(DX11Path, L"\\d3d11.dll");
 
-		gameModule = hModule;
-		DisableThreadLibraryCalls(hModule);
+            // Copy the file from Sys32 over to the root directory
+            std::filesystem::copy(DX11Path, DX11OrgPath);
+        }
 
+        gameModule = hModule;
+        DisableThreadLibraryCalls(hModule);
         CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)executionThread, NULL, NULL, NULL);
     }
-	if(reason == DLL_PROCESS_DETACH) {
-		FreeLibrary(hL); // Free our proxied d3d11 lib so that way we can die in peace
-    }
-	return TRUE;
+    return TRUE;
 }
 
 int executionThread() {
@@ -42,11 +42,6 @@ int executionThread() {
     }
 
     SetConsoleTitle(L"Borderlands 3 Plugin Loader");
-
-    FILE* f = nullptr;
-    freopen_s(&f, "CONIN$", "r", stdin);
-    freopen_s(&f, "CONOUT$", "w", stderr);
-    freopen_s(&f, "CONOUT$", "w", stdout);
 
     HANDLE hStdout = CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
         NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
