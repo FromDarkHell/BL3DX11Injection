@@ -12,7 +12,7 @@ using _ExitProcess = VOID(WINAPI*)(ULONG ExitCode);
 _ExitProcess OriginalExitProcess = NULL;
 VOID WINAPI ExitProcessHook(ULONG ExitCode)
 {
-    std::wcout << "Exiting Process...";
+    LogString(L"Exiting Process...");
 
     Sleep(1000);
 
@@ -35,11 +35,11 @@ void PluginLoadFunction(std::wstring dll, long delay) {
    if (hMod) 
        loadedModules.push_back(hMod);
    else 
-       std::wcout << "Unable to load plugin: " << dll << ": " << GetLastErrorAsString() << std::endl;
+       LogString(L"Unable to load plugin: " + dll + L" : " + GetLastErrorAsString() + L"\n");
 }
 
 void LoadPlugins() {
-    std::wcout << "Loading Plugins..." << std::endl;
+    LogString(L"Loading Plugins...\n");
 
     std::list<std::wstring> pluginsToLoad = {};
 
@@ -54,7 +54,7 @@ void LoadPlugins() {
 
     INIReader reader(iniPath.c_str());
     if (reader.ParseError() != 0) {
-        std::wcout << "Unable to load 'pluginLoader.ini'" << std::endl;
+        LogString(L"Unable to load 'pluginLoader.ini'\n");
     }
 
     WIN32_FIND_DATA fd; // This'll store our data about the plugin we're currently loading in.
@@ -62,7 +62,7 @@ void LoadPlugins() {
     int dllCount = 0;
 
     if (dllFile == INVALID_HANDLE_VALUE) {
-        std::wcout << "No Plugins Found..." << std::endl;
+        LogString(L"No Plugins Found...\n");
         return; // Just return now, no need to bother to execute the rest of the code
     }
 
@@ -77,13 +77,15 @@ void LoadPlugins() {
 
             if (reader.Sections().count(s)) {
                 float delayTime = reader.GetFloat(s, "delaySeconds", 0);
-                std::wcout << "Waiting " << delayTime << " seconds to load " << pluginName << "\n";
+                LogString(L"Waiting " + std::to_wstring(delayTime) + L" seconds to load " + pluginName + L"\n");
                 threads.push_back(std::thread(PluginLoadFunction, filePath, (long) (delayTime * 1000)));
             }
             else {
                 HMODULE hMod = LoadLibrary(filePath.c_str());
-                if (hMod) loadedModules.push_back(hMod);
-                else std::wcout << "Unable to load plugin: " << filePath << ": " << GetLastErrorAsString() << std::endl;
+                if (hMod)
+                    loadedModules.push_back(hMod);
+                else
+                    LogString(L"Unable to load plugin: " + filePath + L" : " + GetLastErrorAsString() + L"\n");
             }
         }
 
@@ -96,13 +98,13 @@ void LoadPlugins() {
     }
 
     // Add an extra new line just in case it all gets messed up with the whole multithreading
-    std::wcout << std::endl;
+    LogString(L"\n");
 }
 
 using _LoadLibrary = HMODULE(WINAPI*)(LPCWSTR lpLibFileName);
 _LoadLibrary OriginalLoadLibrary = NULL;
 HMODULE WINAPI LoadLibraryWHook(LPCWSTR lpLibFileName) {
-    std::wcout << "Loading Library: " << std::wstring(lpLibFileName) << std::endl;
+    LogString(L"Loading Library: " + std::wstring(lpLibFileName) + L"\n");
 
     if (std::wstring(lpLibFileName).find(L"APEX_Clothing_x64") != std::string::npos) {
         CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)LoadPlugins, NULL, NULL, NULL);
@@ -122,11 +124,11 @@ void InitializePluginHooks(HMODULE gameModule) {
     GetModuleFileNameW(gameModule, pluginsFilePath, 512);
     std::wstring pPath = pluginsFilePath;
     pPath = pPath.substr(0, pPath.rfind('\\')) + L"\\Plugins\\";
-    std::wcout << "Plugins Path: " << pPath << std::endl;
+    LogString(L"Plugins Path: " + pPath + L"\n");
 
     // This'll hapen if we are magically unable to create the plugins dir.
     if (!CreateDirectory(pPath.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS) {
-        std::wcout << "Unable to create plugins folder..." << std::endl;
+        LogString(L"Unable to create plugins folder...\n");
         return;
     }
     pluginsPath = pPath;
@@ -135,13 +137,13 @@ void InitializePluginHooks(HMODULE gameModule) {
     PVOID Target = GetProcAddress(GetModuleHandle(L"kernel32.dll"), "ExitProcess");
     
     if (SetHook(Target, ExitProcessHook, reinterpret_cast<PVOID*>(&OriginalExitProcess))) 
-        std::wcout << "Initialized ExitProcess(...) hook" << std::endl;
+        LogString(L"Initialized ExitProcess(...) hook\n");
     else 
-        std::wcout << "Unable to initialize ExitProcess(...) hook" << std::endl;
+        LogString(L"Unable to initialize ExitProcess(...) hook\n");
 
     PVOID loadLibraryHook = GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryW");
     if (SetHook(loadLibraryHook, LoadLibraryWHook, reinterpret_cast<PVOID*>(&OriginalLoadLibrary)))
-        std::wcout << "Initialized LoadLibraryW(...) hook..." << std::endl;
+        LogString(L"Initialized LoadLibraryW(...) hook...\n");
     else  
-        std::wcout << "Unable to initialize LoadLibraryW(...) hook" << std::endl;
+        LogString(L"Unable to initialize LoadLibraryW(...) hook");
 }

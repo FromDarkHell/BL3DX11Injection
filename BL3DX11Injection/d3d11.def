@@ -50,3 +50,4 @@ D3DKMTOpenResource=Proxy_D3DKMTOpenResource @48
 D3DKMTQueryResourceInfo=Proxy_D3DKMTQueryResourceInfo @49
 CreateDirect3D11DeviceFromDXGIDevice=Proxy_CreateDirect3D11DeviceFromDXGIDevice @50
 CreateDirect3D11SurfaceFromDXGISurface=Proxy_CreateDirect3D11SurfaceFromDXGISurface @51
+LIBRARY

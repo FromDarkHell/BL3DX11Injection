@@ -53,4 +53,9 @@
       <Filter>Header Files\Libraries</Filter>
     </Library>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="d3d11.def">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

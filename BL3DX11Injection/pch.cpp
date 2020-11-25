@@ -1,5 +1,6 @@
 #include "pch.h"
 
+
 std::wstring GetLastErrorAsString()
 {
     //Get the error message, if any.
@@ -23,9 +24,35 @@ std::wstring WidenString(const std::string& s) {
     return std::wstring(s.begin(), s.end());
 }
 
+std::string FlattenString(const std::wstring& s) {
+    return std::string(s.begin(), s.end());
+}
+
 std::wstring GetModulePath() {
     TCHAR buffer[MAX_PATH] = { 0 };
-    GetModuleFileName(NULL, buffer, MAX_PATH);
-    std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
-    return std::wstring(buffer).substr(0, pos);
+    int val = GetModuleFileName(NULL, buffer, MAX_PATH);
+    if (val == 0) {
+        // TODO: implement a stronger fallback method for this
+        return L"C:";
+    }
+
+
+    std::wstring str(buffer);
+    std::wstring::size_type pos = str.find_last_of(L"\\/");
+    if (pos != std::string::npos) {
+        std::wstring out = std::wstring(buffer).substr(0, pos);
+        return out;
+    }
+    else {
+        return L"C:";
+    }
+}
+
+void LogString(const std::wstring& str) {
+    std::wcout << str;
+
+    std::fstream logFile;
+    logFile.open(FlattenString(GetModulePath()) + "\\PluginLoader.log", std::ios::app);
+    logFile << FlattenString(str);
+    logFile.close();
 }
