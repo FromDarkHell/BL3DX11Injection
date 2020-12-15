@@ -1,5 +1,5 @@
-# BL3DX11Injection
- A quick/simple way of having plugins get loaded into (any game probably) Borderlands 3.
+## BL3 DX11 Injection
+A quick/simple way of having plugins get loaded into (any game probably) Borderlands 3.
 
 # Installation
 
