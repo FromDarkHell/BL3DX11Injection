@@ -4,6 +4,9 @@
 #include "dllmain.h"
 #include "PluginLoadHook.h"
 
+#pragma warning(disable: 6031)
+
+
 static HINSTANCE hL;
 static HMODULE gameModule;
 
@@ -51,15 +54,28 @@ int executionThread() {
 
     SetConsoleTitle(L"Borderlands 3 Plugin Loader");
 
-    HANDLE hStdout = CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-        NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    HANDLE hStdin = CreateFile(L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-        NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
+    // All of this is necessary so that way we can properly use the output of the console
+    freopen("CONIN$", "r", stdin); 
+    freopen("CONOUT$", "w", stderr);
+    freopen("CONOUT$", "w", stdout);
+    HANDLE hStdout = CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hStdin = CreateFile(L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    
+    // Make cout, wcout, cin, wcin, wcerr, cerr, wclog and clog point to console as well
+    std::ios::sync_with_stdio(true);
+    SetStdHandle(STD_INPUT_HANDLE, hStdin);
     SetStdHandle(STD_OUTPUT_HANDLE, hStdout); // Set our STD handles
     SetStdHandle(STD_ERROR_HANDLE, hStdout); // stderr is going back to STDOUT
-    SetStdHandle(STD_INPUT_HANDLE, hStdin);
 
+    // Clear the error states for all of the C++ stream objects.
+    // Attempting to access the streams before they're valid causes them to enter an error state.
+    std::wcout.clear();
+    std::cout.clear();
+    std::wcerr.clear();
+    std::cerr.clear();
+    std::wcin.clear();
+    std::cin.clear();
+    
     LogString(L"Console allocated...\n");
     LogString(L"==== Debug ====\n");
 

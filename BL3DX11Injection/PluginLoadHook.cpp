@@ -134,16 +134,21 @@ void InitializePluginHooks(HMODULE gameModule) {
     pluginsPath = pPath;
     iniPath = pluginsPath + L"pluginLoader.ini";
 
-    PVOID Target = GetProcAddress(GetModuleHandle(L"kernel32.dll"), "ExitProcess");
-    
-    if (SetHook(Target, ExitProcessHook, reinterpret_cast<PVOID*>(&OriginalExitProcess))) 
+    auto kernelDll = GetModuleHandle(L"kernel32.dll");
+    if (kernelDll == NULL) { // Honestly this is pretty much pointless but doing it like this removes an error & saves on some processing
+        LogString(L"Unable to locate kernel module...\n");
+        return;
+    }
+
+    PVOID Target = GetProcAddress(kernelDll, "ExitProcess");
+    if (Target != NULL && SetHook(Target, ExitProcessHook, reinterpret_cast<PVOID*>(&OriginalExitProcess))) 
         LogString(L"Initialized ExitProcess(...) hook\n");
     else 
         LogString(L"Unable to initialize ExitProcess(...) hook\n");
 
-    PVOID loadLibraryHook = GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryW");
-    if (SetHook(loadLibraryHook, LoadLibraryWHook, reinterpret_cast<PVOID*>(&OriginalLoadLibrary)))
+    PVOID loadLibraryHook = GetProcAddress(kernelDll, "LoadLibraryW");
+    if (loadLibraryHook != NULL && SetHook(loadLibraryHook, LoadLibraryWHook, reinterpret_cast<PVOID*>(&OriginalLoadLibrary)))
         LogString(L"Initialized LoadLibraryW(...) hook...\n");
     else  
-        LogString(L"Unable to initialize LoadLibraryW(...) hook");
+        LogString(L"Unable to initialize LoadLibraryW(...) hook\n");
 }

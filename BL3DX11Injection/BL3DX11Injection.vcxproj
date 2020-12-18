@@ -75,7 +75,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>d3d11</TargetName>
-    <OutDir>K:\Borderlands3\OakGame\Binaries\Win64</OutDir>
+    <OutDir>K:\Borderlands3\OakGame\Binaries\Win64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -185,9 +185,6 @@
   <ItemGroup>
     <Library Include="HookLib.lib" />
     <Library Include="Zydis.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="d3d11.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

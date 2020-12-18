@@ -12,6 +12,7 @@ home page for more info:
 https://github.com/benhoyt/inih
 
 */
+#pragma warning(disable: 26495)
 
 #ifndef __INI_H__
 #define __INI_H__
