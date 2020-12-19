@@ -33,6 +33,7 @@ std::wstring GetModulePath() {
     int val = GetModuleFileName(NULL, buffer, MAX_PATH);
     if (val == 0) {
         // TODO: implement a stronger fallback method for this
+        std::wcout << "Error obtaining module path: " << GetLastErrorAsString() << std::endl;
         return L"C:";
     }
 

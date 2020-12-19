@@ -3,7 +3,7 @@
 #include <filesystem>
 #include "dllmain.h"
 #include "PluginLoadHook.h"
-
+#include "ThreadManager.hpp"
 #pragma warning(disable: 6031)
 
 
@@ -17,12 +17,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
         // We copy the original DX11 dll from Sys32 in order to avoid weird version differences and crashes
         // The linker exports at the bottom let windows handle all of the DX11 proxy stuff after a `d3d11_org` exists in the root dir
 
+        // Suspend all threads but our own to avoid deadlocks
+        ThreadManager::Suspend();
+
         // Check if the file exists to just avoid constantly copying the file on launch
-
         std::string DX11OrgPath = FlattenString(GetModulePath()) + "\\d3d11_org.dll";
-
         std::filesystem::remove(FlattenString(GetModulePath()) + "\\PluginLoader.log");
-
         LogString(L"Checking for existence of " + WidenString(DX11OrgPath) + L"\n");
 
         if (!std::filesystem::exists(DX11OrgPath)) {
@@ -35,10 +35,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
             // Copy the file from Sys32 over to the root directory
             std::filesystem::copy(DX11Path, DX11OrgPath);
         }
-        LogString(L"Proxy DX11 Exists: " + std::wstring(std::filesystem::exists(DX11OrgPath) ? L"Yes" : L"No") + L"\n") ;
 
+        LogString(L"Proxy DX11 Exists: " + std::wstring(std::filesystem::exists(DX11OrgPath) ? L"Yes" : L"No") + L"\n") ;
         gameModule = hModule;
+
         DisableThreadLibraryCalls(hModule);
+        LogString(L"Resuming all other threads...\n");
+
+        // Resume all other threads
+        ThreadManager::Resume();
+
         CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)executionThread, NULL, NULL, NULL);
     }
     return TRUE;

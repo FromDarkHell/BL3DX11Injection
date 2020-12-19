@@ -171,6 +171,7 @@
     <ClInclude Include="INIReader.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PluginLoadHook.h" />
+    <ClInclude Include="ThreadManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
