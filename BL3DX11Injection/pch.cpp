@@ -61,6 +61,8 @@ void InitializeConsole() {
     HANDLE hStdin = CreateFile(L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     // Make cout, wcout, cin, wcin, wcerr, cerr, wclog and clog point to console as well
+    std::ios::sync_with_stdio(true);
+
     SetStdHandle(STD_INPUT_HANDLE, hStdin);
     SetStdHandle(STD_OUTPUT_HANDLE, hStdout); // Set our STD handles
     SetStdHandle(STD_ERROR_HANDLE, hStdout); // stderr is going back to STDOUT
@@ -73,7 +75,6 @@ void InitializeConsole() {
     std::cerr.clear();
     std::wcin.clear();
     std::cin.clear();
-
 }
 
 void LogString(const std::wstring& str) {

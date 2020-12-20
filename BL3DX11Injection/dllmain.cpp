@@ -13,7 +13,6 @@ static HMODULE gameModule;
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
-        // Suspend all threads but our own to avoid deadlocks
         gameModule = hModule;
         DisableThreadLibraryCalls(hModule);
 
@@ -23,15 +22,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
 }
 
 int executionThread() {
+    // Suspend all threads but our own to avoid deadlocks
     ThreadManager::Suspend();
+
     std::string cmdArgs = GetCommandLineA(); // Get the command line args for our running process
 
     // If we're running in debug mode, we wanna allocate the console
     if (cmdArgs.find("--debug") != std::string::npos) {
         AllocConsole(); // Allocate our console
+        InitializeConsole();
     }
-
-    InitializeConsole();
 
     LogString(L"Console allocated...\n");
     LogString(L"==== Debug ====\n");
