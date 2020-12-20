@@ -77,4 +77,5 @@ namespace ThreadManager {
 	}
 }
 
+
 #endif SUSPENDRESUME_H

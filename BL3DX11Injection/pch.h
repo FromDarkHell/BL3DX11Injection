@@ -16,6 +16,8 @@ std::string FlattenString(const std::wstring& s);
 
 std::wstring GetModulePath();
 
+void InitializeConsole();
+
 void LogString(const std::wstring& str);
 
 #endif //PCH_H
