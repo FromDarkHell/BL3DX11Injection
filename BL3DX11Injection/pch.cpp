@@ -45,9 +45,7 @@ std::wstring GetModulePath() {
         std::wstring out = std::wstring(buffer).substr(0, pos);
         return out;
     }
-    else {
-        return L"C:";
-    }
+    return L"C:";
 }
 
 void InitializeConsole() {

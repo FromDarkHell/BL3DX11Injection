@@ -169,6 +169,10 @@
       </ModuleDefinitionFile>
       <ImportLibrary>$(ProjectDir)$(TargetName).lib</ImportLibrary>
     </Link>
+    <PostBuildEvent>
+      <Command>del "$(TargetDir)d3d11_org.dll"
+del "$(TargetDir)PluginLoader.log"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="dllmain.h" />

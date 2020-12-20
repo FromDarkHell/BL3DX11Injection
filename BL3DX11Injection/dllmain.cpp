@@ -5,17 +5,11 @@
 #include "ThreadManager.hpp"
 #pragma pack(1)
 
-
-
-
 static HINSTANCE hL;
 static HMODULE gameModule;
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
-        // Suspend all other threads to prevent a giant race condition
-        ThreadManager::Suspend();
-
         std::string cmdArgs = GetCommandLineA(); // Get the command line args for our running process
                                                  
         // If we're running in debug mode, we wanna allocate the console
@@ -26,6 +20,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
 
         LogString(L"Console allocated...\n");
         LogString(L"==== Debug ====\n");
+
+        LogString(L"Suspending all other threads...");
+
+        // Suspend all other threads to prevent a giant race condition
+        ThreadManager::Suspend();
 
         // Check if the file exists to just avoid constantly copying the file on launch
         std::string DX11OrgPath = FlattenString(GetModulePath()) + "\\d3d11_org.dll";
@@ -44,6 +43,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
             // Copy the file from Sys32 over to the root directory
             std::filesystem::copy(DX11Path, DX11OrgPath);
         }
+
         LogString(L"Proxy DX11 Exists: " + std::wstring(std::filesystem::exists(DX11OrgPath) ? L"Yes" : L"No") + L"\n");
 
         gameModule = hModule;
@@ -59,17 +59,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID) {
 }
 
 int executionThread() {
-    InitializePluginHooks(gameModule);
 
+    InitializePluginHooks(gameModule);
     return TRUE;
+
 }
 
 
 #pragma region Linker Exports
 #pragma comment(linker, "/export:D3D11CoreCreateDevice=d3d11_org.D3D11CoreCreateDevice")
-
 #pragma comment(linker, "/export:D3D11CreateDevice=d3d11_org.D3D11CreateDevice")
-
 #pragma comment(linker, "/export:D3D11CreateDeviceAndSwapChain=d3d11_org.D3D11CreateDeviceAndSwapChain")
-
 #pragma endregion

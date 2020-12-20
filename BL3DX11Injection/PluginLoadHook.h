@@ -9,9 +9,6 @@
 
 
 VOID WINAPI ExitProcessHook(ULONG ExitCode);
-
 void PluginLoadFunction(std::wstring dll, long delay);
-
 void InitializePluginHooks(HMODULE gameModule);
-
 void LoadPlugins();
