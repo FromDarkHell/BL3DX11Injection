@@ -81,6 +81,7 @@ void LoadPlugins() {
                 threads.push_back(std::thread(PluginLoadFunction, filePath, (long) (delayTime * 1000)));
             }
             else {
+                LogString(L"Loading Plugin: " + filePath + L"\n");
                 HMODULE hMod = LoadLibrary(filePath.c_str());
                 if (hMod)
                     loadedModules.push_back(hMod);
@@ -107,8 +108,8 @@ HMODULE WINAPI LoadLibraryWHook(LPCWSTR lpLibFileName) {
     LogString(L"Loading Library: " + std::wstring(lpLibFileName) + L"\n");
 
     if (std::wstring(lpLibFileName).find(L"APEX_Clothing_x64") != std::string::npos) {
-        CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)LoadPlugins, NULL, NULL, NULL);
         RemoveHook(OriginalLoadLibrary);
+        CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)LoadPlugins, NULL, NULL, NULL);
         return LoadLibrary(lpLibFileName);
     }
 
