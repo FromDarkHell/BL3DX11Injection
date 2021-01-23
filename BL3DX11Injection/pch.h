@@ -3,6 +3,9 @@
 
 #define WIN32_LEAN_AND_MEAN
 
+#define DLLImport   __declspec( dllimport ) 
+#define DLLExport  extern "C" __declspec( dllexport )
+
 #include <windows.h>
 #include <iostream>
 #include <stdio.h>
