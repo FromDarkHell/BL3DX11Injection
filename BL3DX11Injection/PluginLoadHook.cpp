@@ -4,6 +4,7 @@
 std::wstring pluginsPath;
 static std::wstring iniPath;
 static std::vector<HMODULE> loadedModules;
+static DLL_DIRECTORY_COOKIE pluginsCookie;
 
 #pragma region Hooks
 
@@ -19,6 +20,10 @@ VOID WINAPI ExitProcessHook(ULONG ExitCode)
     // Now free all of our other libs that we loaded
     for (auto&& hMod : loadedModules) {
         FreeLibrary(hMod);
+    }
+
+    if (pluginsCookie != 0) {
+        RemoveDllDirectory(pluginsCookie);
     }
 
     RemoveHook(OriginalExitProcess);
@@ -134,6 +139,12 @@ void InitializePluginHooks(HMODULE gameModule) {
     }
     pluginsPath = pPath;
     iniPath = pluginsPath + L"pluginLoader.ini";
+
+    pluginsCookie = AddDllDirectory(pPath.c_str());
+    if (pluginsCookie == 0) {
+        LogString(L"Unable to add dll directory... (" + std::to_wstring(GetLastError()) + L")\n");
+        // Continue
+    }
 
     if (SetHook(&ExitProcess, ExitProcessHook, reinterpret_cast<PVOID*>(&OriginalExitProcess))) 
         LogString(L"Initialized ExitProcess(...) hook\n");
